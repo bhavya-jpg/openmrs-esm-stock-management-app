@@ -1,6 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { showSnackbar, useConfig } from '@openmrs/esm-framework';
 import { mockWorkspace2Props } from '@mocks';
@@ -271,6 +271,21 @@ describe('AddStockUserRoleScope', () => {
       expect(screen.queryByText('Role is required')).not.toBeInTheDocument();
       expect(screen.queryByText('Active From is required')).not.toBeInTheDocument();
       expect(screen.getByText('Select at least one stock operation')).toBeInTheDocument();
+    });
+
+    it('disables Save until the save finishes', async () => {
+      const user = userEvent.setup();
+      let failSave: (error: Error) => void;
+      vi.mocked(createOrUpdateUserRoleScope).mockReturnValue(new Promise((_, reject) => (failSave = reject)) as never);
+      renderForm(savedScope);
+
+      await user.click(screen.getByRole('button', { name: /save/i }));
+
+      expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
+
+      await act(async () => failSave(new Error('Server error')));
+
+      expect(screen.getByRole('button', { name: /save/i })).toBeEnabled();
     });
 
     it('saves a complete permanent scope', async () => {

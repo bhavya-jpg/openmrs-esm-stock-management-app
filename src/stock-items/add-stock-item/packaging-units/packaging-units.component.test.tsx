@@ -1,6 +1,8 @@
 import React from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { createStockItemPackagingUnit } from '../../stock-items.resource';
 import PackagingUnits from './packaging-units.component';
 
 vi.mock('./packaging-units.resource', () => {
@@ -33,8 +35,11 @@ vi.mock('../../../utils', () => ({
   useHandleMutate: () => vi.fn(),
 }));
 
+// Clicking it picks a packaging unit for the new row
 vi.mock('../packaging-units-concept-selector/packaging-units-concept-selector.component', () => ({
-  default: () => <div>New packaging unit</div>,
+  default: ({ onPackageUnitChange }) => (
+    <div onClick={() => onPackageUnitChange({ uuid: 'uom-2', display: 'Bottle' })}>New packaging unit</div>
+  ),
 }));
 
 describe('PackagingUnits', () => {
@@ -46,5 +51,21 @@ describe('PackagingUnits', () => {
     expect(within(savedRow).getByRole('button')).toBeInTheDocument();
     expect(within(newRow).queryByRole('button')).not.toBeInTheDocument();
     expect(screen.getByText('New packaging unit')).toBeInTheDocument();
+  });
+
+  it('disables Save until the save finishes', async () => {
+    const user = userEvent.setup();
+    let failSave: (error: Error) => void;
+    vi.mocked(createStockItemPackagingUnit).mockReturnValue(new Promise((_, reject) => (failSave = reject)) as never);
+    render(<PackagingUnits stockItemUuid="stock-item-uuid" handleTabChange={vi.fn()} />);
+
+    await user.click(screen.getByText('New packaging unit'));
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(screen.getByRole('button', { name: /save/i })).toBeDisabled();
+
+    await act(async () => failSave(new Error('Server error')));
+
+    expect(screen.getByRole('button', { name: /save/i })).toBeEnabled();
   });
 });

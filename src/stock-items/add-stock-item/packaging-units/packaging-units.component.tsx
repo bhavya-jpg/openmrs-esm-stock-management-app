@@ -80,6 +80,8 @@ const PackagingUnits: React.FC<PackagingUnitsProps> = ({ stockItemUuid, handleTa
     [t],
   );
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const packageUnitForm = useForm<PackageUnitFormData>({
     defaultValues: {},
     mode: 'all',
@@ -88,6 +90,7 @@ const PackagingUnits: React.FC<PackagingUnitsProps> = ({ stockItemUuid, handleTa
 
   const handleSavePackageUnits = () => {
     const { reset } = packageUnitForm;
+    setIsSaving(true);
 
     const newPayload = newUnit
       ? {
@@ -153,12 +156,14 @@ const PackagingUnits: React.FC<PackagingUnitsProps> = ({ stockItemUuid, handleTa
     );
 
     // Wait for all requests to complete
-    Promise.all([createPromises, ...updatePromises]).then(() => {
-      mutate();
-      handleMutate(`${restBaseUrl}/stockmanagement/stockitem`);
-      reset();
-      handleTabChange(0);
-    });
+    Promise.all([createPromises, ...updatePromises])
+      .then(() => {
+        mutate();
+        handleMutate(`${restBaseUrl}/stockmanagement/stockitem`);
+        reset();
+        handleTabChange(0);
+      })
+      .finally(() => setIsSaving(false));
   };
   const handleCancelPackagingUnits = () => {
     handleTabChange(0);
@@ -256,6 +261,7 @@ const PackagingUnits: React.FC<PackagingUnitsProps> = ({ stockItemUuid, handleTa
           name="save"
           type="submit"
           className="submitButton"
+          disabled={isSaving}
           onClick={handleSavePackageUnits}
           kind="primary"
           renderIcon={Save}

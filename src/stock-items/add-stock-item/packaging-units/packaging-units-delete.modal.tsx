@@ -21,6 +21,7 @@ const DeletePackagingUnitModal: React.FC<DeletePackagingUnitModalProps> = ({ row
   }, [row.stockItemUuid, setStockItemUuid]);
 
   const [reason, setReason] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleReasonChange = (e) => {
     setReason(e.target.value);
@@ -28,26 +29,29 @@ const DeletePackagingUnitModal: React.FC<DeletePackagingUnitModalProps> = ({ row
 
   const handleDelete = (e) => {
     e.preventDefault();
-    deleteStockItemPackagingUnit(row.uuid, reason).then(
-      () => {
-        mutate();
-        closeModal();
-        showSnackbar({
-          isLowContrast: true,
-          title: t('deletePackingItem', 'Delete packing item'),
-          kind: 'success',
-          subtitle: t('deletePackagingUnitMessage', 'Stock item packing unit deleted successfully'),
-        });
-      },
-      (error) => {
-        showSnackbar({
-          title: t('deletePackingUnitErrorTitle', 'Error Deleting a stock item packing unit'),
-          kind: 'error',
-          isLowContrast: true,
-          subtitle: error?.message,
-        });
-      },
-    );
+    setIsDeleting(true);
+    deleteStockItemPackagingUnit(row.uuid, reason)
+      .then(
+        () => {
+          mutate();
+          closeModal();
+          showSnackbar({
+            isLowContrast: true,
+            title: t('deletePackingItem', 'Delete packing item'),
+            kind: 'success',
+            subtitle: t('deletePackagingUnitMessage', 'Stock item packing unit deleted successfully'),
+          });
+        },
+        (error) => {
+          showSnackbar({
+            title: t('deletePackingUnitErrorTitle', 'Error Deleting a stock item packing unit'),
+            kind: 'error',
+            isLowContrast: true,
+            subtitle: error?.message,
+          });
+        },
+      )
+      .finally(() => setIsDeleting(false));
   };
 
   return (
@@ -77,7 +81,7 @@ const DeletePackagingUnitModal: React.FC<DeletePackagingUnitModalProps> = ({ row
         <Button kind="secondary" onClick={closeModal}>
           {t('no', 'No')}
         </Button>
-        <Button kind="danger" type="submit" onClick={handleDelete} disabled={reason.length < 1}>
+        <Button kind="danger" type="submit" onClick={handleDelete} disabled={reason.length < 1 || isDeleting}>
           {t('yes', 'Yes')}
         </Button>
       </ModalFooter>

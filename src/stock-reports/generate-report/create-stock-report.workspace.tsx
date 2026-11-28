@@ -245,7 +245,7 @@ const CreateReport: React.FC<Workspace2DefinitionProps<CreateReportProps>> = ({ 
   const {
     handleSubmit,
     control,
-    formState: { errors, defaultValues, isDirty },
+    formState: { errors, defaultValues, isDirty, isSubmitting },
     setValue,
   } = useForm<StockReportSchema>({
     mode: 'all',
@@ -826,7 +826,7 @@ const CreateReport: React.FC<Workspace2DefinitionProps<CreateReportProps>> = ({ 
           <Button kind="secondary" onClick={() => closeWorkspace()} className={styles.button}>
             {getCoreTranslation('cancel')}
           </Button>
-          <Button type="submit" className={styles.button}>
+          <Button type="submit" className={styles.button} disabled={isSubmitting}>
             {getCoreTranslation('save')}
           </Button>
         </ButtonSet>

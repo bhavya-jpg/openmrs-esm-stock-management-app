@@ -64,6 +64,7 @@ const StockRulesAddOrUpdate: React.FC<Workspace2DefinitionProps<AddStockRuleProp
   //Roles
   const { items: rolesData } = useRoles({ v: ResourceRepresentation.Default });
 
+  const [isSaving, setIsSaving] = useState(false);
   const [formModel, setFormModel] = useState<StockRule>({
     enabled: true,
     ...model,
@@ -152,6 +153,7 @@ const StockRulesAddOrUpdate: React.FC<Workspace2DefinitionProps<AddStockRuleProp
       if (stockItemUuid) {
         formModel.stockItemUuid = stockItemUuid;
       }
+      setIsSaving(true);
       createOrUpdateStockRule(formModel)
         .then(
           () => {
@@ -177,7 +179,8 @@ const StockRulesAddOrUpdate: React.FC<Workspace2DefinitionProps<AddStockRuleProp
             });
           },
         )
-        .catch();
+        .catch()
+        .finally(() => setIsSaving(false));
     },
     [formModel, model, t, stockItemUuid, closeWorkspace, handleMutate],
   );
@@ -353,7 +356,7 @@ const StockRulesAddOrUpdate: React.FC<Workspace2DefinitionProps<AddStockRuleProp
           <Button kind="secondary" onClick={() => closeWorkspace()} className={styles.button}>
             {getCoreTranslation('cancel')}
           </Button>
-          <Button type="submit" className={styles.button}>
+          <Button type="submit" className={styles.button} disabled={isSaving}>
             {getCoreTranslation('save')}
           </Button>
         </ButtonSet>

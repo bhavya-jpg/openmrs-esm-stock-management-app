@@ -1,6 +1,6 @@
 import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { showSnackbar, useConfig } from '@openmrs/esm-framework';
 import { mockWorkspace2Props } from '@mocks';
@@ -144,6 +144,25 @@ describe('CreateReport', () => {
       await waitFor(() => expect(createBatchJob).toHaveBeenCalledTimes(1));
       expect(getParameters()).toContain('param.EndDate.value.desc=31-Jan-2026');
     });
+  });
+
+  it('disables Save until the save finishes', async () => {
+    const user = userEvent.setup();
+    let failSave: (error: Error) => void;
+    vi.mocked(createBatchJob).mockReturnValue(new Promise((_, reject) => (failSave = reject)) as never);
+    renderForm();
+    await selectReport(user, 'Stock Expiry Report');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Location' }), 'Main Store');
+    typeDate('Start date', '01/01/2026');
+    typeDate('End date', '31/01/2026');
+
+    await save(user);
+
+    await waitFor(() => expect(screen.getByRole('button', { name: /save/i })).toBeDisabled());
+
+    await act(async () => failSave(new Error('Server error')));
+
+    expect(screen.getByRole('button', { name: /save/i })).toBeEnabled();
   });
 
   describe('Limit', () => {

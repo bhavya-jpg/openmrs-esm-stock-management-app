@@ -82,6 +82,7 @@ const AddStockUserRoleScope: React.FC<Workspace2DefinitionProps<AddStockUserRole
 
   const [roles, setRoles] = useState<Role[]>([]);
   const [showErrors, setShowErrors] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const loggedInUserUuid = currentUser?.user?.uuid;
   const [selectedUserUuid, setSelectedUserUuid] = useState<string | null>(null);
@@ -278,26 +279,29 @@ const AddStockUserRoleScope: React.FC<Workspace2DefinitionProps<AddStockUserRole
       return;
     }
 
-    createOrUpdateUserRoleScope(formModel).then(
-      (response) => {
-        handleMutate(`${restBaseUrl}/stockmanagement/userrolescope`);
-        showSnackbar({
-          isLowContrast: true,
-          title: t('addUserRole', 'Add User role'),
-          kind: 'success',
-          subtitle: t('successfullySaved', 'You have successfully saved user role scope'),
-        });
-        closeWorkspace();
-      },
-      (err) => {
-        showSnackbar({
-          title: t('errorSavingUserRoleScope', 'Error Saving user role scope'),
-          kind: 'error',
-          isLowContrast: true,
-          subtitle: err?.message ?? err?.cause ?? t('unknownError', 'An unknown error occurred'),
-        });
-      },
-    );
+    setIsSaving(true);
+    createOrUpdateUserRoleScope(formModel)
+      .then(
+        (response) => {
+          handleMutate(`${restBaseUrl}/stockmanagement/userrolescope`);
+          showSnackbar({
+            isLowContrast: true,
+            title: t('addUserRole', 'Add User role'),
+            kind: 'success',
+            subtitle: t('successfullySaved', 'You have successfully saved user role scope'),
+          });
+          closeWorkspace();
+        },
+        (err) => {
+          showSnackbar({
+            title: t('errorSavingUserRoleScope', 'Error Saving user role scope'),
+            kind: 'error',
+            isLowContrast: true,
+            subtitle: err?.message ?? err?.cause ?? t('unknownError', 'An unknown error occurred'),
+          });
+        },
+      )
+      .finally(() => setIsSaving(false));
   };
 
   if (isLoading || loadingRoles || isLoadingStockLocations) {
@@ -494,7 +498,7 @@ const AddStockUserRoleScope: React.FC<Workspace2DefinitionProps<AddStockUserRole
           <Button kind="secondary" onClick={() => closeWorkspace()} className={styles.button}>
             {getCoreTranslation('cancel')}
           </Button>
-          <Button type="submit" className={styles.button} renderIcon={Save}>
+          <Button type="submit" className={styles.button} disabled={isSaving} renderIcon={Save}>
             {getCoreTranslation('save')}
           </Button>
         </ButtonSet>

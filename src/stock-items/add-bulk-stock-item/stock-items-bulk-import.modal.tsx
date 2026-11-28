@@ -11,6 +11,7 @@ export interface ImportBulkStockItemsModalProps {
 const ImportBulkStockItemsModal: React.FC<ImportBulkStockItemsModalProps> = ({ closeModal }) => {
   const { t } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<any>();
+  const [isUploading, setIsUploading] = useState(false);
 
   const onConfirmUpload = () => {
     if (!selectedFile) {
@@ -24,23 +25,26 @@ const ImportBulkStockItemsModal: React.FC<ImportBulkStockItemsModalProps> = ({ c
       formData.append('hasHeader', 'true');
     }
 
-    uploadStockItems(formData).then(
-      () => {
-        showSnackbar({
-          kind: 'success',
-          title: t('stockItemsUploadedSuccessfully', 'Stock items uploaded successfully'),
-        });
-        closeModal();
-      },
-      (err) => {
-        showSnackbar({
-          kind: 'error',
-          isLowContrast: false,
-          subtitle: err?.message,
-          title: t('errorUploadingItems', 'An error occurred uploading stock items'),
-        });
-      },
-    );
+    setIsUploading(true);
+    uploadStockItems(formData)
+      .then(
+        () => {
+          showSnackbar({
+            kind: 'success',
+            title: t('stockItemsUploadedSuccessfully', 'Stock items uploaded successfully'),
+          });
+          closeModal();
+        },
+        (err) => {
+          showSnackbar({
+            kind: 'error',
+            isLowContrast: false,
+            subtitle: err?.message,
+            title: t('errorUploadingItems', 'An error occurred uploading stock items'),
+          });
+        },
+      )
+      .finally(() => setIsUploading(false));
   };
 
   const onFileChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,7 +77,7 @@ const ImportBulkStockItemsModal: React.FC<ImportBulkStockItemsModalProps> = ({ c
           <Button kind="secondary" onClick={closeModal}>
             {getCoreTranslation('cancel')}
           </Button>
-          <Button type="button" onClick={onConfirmUpload}>
+          <Button type="button" disabled={isUploading} onClick={onConfirmUpload}>
             {t('uploadStockItems', 'Upload stock items')}
           </Button>
         </ModalFooter>

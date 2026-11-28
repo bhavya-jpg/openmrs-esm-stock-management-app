@@ -1,7 +1,7 @@
 import React from 'react';
 import { vi, describe, it, expect } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { type FetchResponse, showSnackbar } from '@openmrs/esm-framework';
 import { uploadStockItems } from './stock-items-bulk-import.resource';
 import ImportBulkStockItemsModal from './stock-items-bulk-import.modal';
@@ -52,6 +52,22 @@ describe('ImportBulkStockItemsModal', () => {
     expect(uploadStockItems).not.toHaveBeenCalled();
     expect(mockShowSnackbar).not.toHaveBeenCalled();
     expect(mockCloseModal).not.toHaveBeenCalled();
+  });
+
+  it('disables Upload until the upload finishes', async () => {
+    const user = userEvent.setup();
+    let failUpload: (error: Error) => void;
+    mockUploadStockItems.mockReturnValue(new Promise((_, reject) => (failUpload = reject)) as never);
+    render(<ImportBulkStockItemsModal closeModal={mockCloseModal} />);
+
+    await userEvent.upload(screen.getByLabelText('Select file'), new File(['a'], 'items.csv', { type: 'text/csv' }));
+    await user.click(screen.getByRole('button', { name: /upload stock items/i }));
+
+    expect(screen.getByRole('button', { name: /upload stock items/i })).toBeDisabled();
+
+    await act(async () => failUpload(new Error('Server error')));
+
+    expect(screen.getByRole('button', { name: /upload stock items/i })).toBeEnabled();
   });
 
   it('uploads file successfully and shows success snackbar', async () => {
